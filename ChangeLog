@@ -1,0 +1,23 @@
+2010-10-06
+    * Released to GitHub 
+
+2009-11-29 R2
+    * Rolled version back and deleted changes from 2009-11-29 R1.
+
+2009-11-29 R1
+    * Modified records to output nick(R=<Level>) to mark recursion level.
+
+2009-01-01
+    * Fixed bug where script crashes due do lack of hostname info.
+    * Added debug logging support.
+
+2008-11-27
+    * Automatic database creation added.
+    * /nick_lookup, /host_lookup added
+
+2008-11-01
+    * New search method to support recursive searched added.
+    * New Options Added: _max_recursion, _recursive_search, _guest_nick_regex, _ignore_guest_nicks
+
+2008-10-25
+    * Inital Creation
