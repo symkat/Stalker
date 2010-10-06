@@ -1,4 +1,9 @@
 2010-10-06
+    * Added patch by Mantas Mikulėnas "Make the default paths relative 
+      to Irssi home directory" to correct issue with paths when starting
+      stalker.pl outside of ~/
+
+2010-10-06
     * Released to GitHub 
 
 2009-11-29 R2

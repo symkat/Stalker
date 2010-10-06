@@ -1,5 +1,6 @@
 use Irssi;
 use vars qw/$VERSION %IRSSI/;
+use File::Spec;
 use DBI;
 use POSIX qw/ strftime /;
 
@@ -7,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite3
 
-$VERSION = '0.30';
+$VERSION = '0.31';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -32,10 +33,10 @@ Irssi::command_bind( 'nick_lookup', \&nick_request );
 Irssi::theme_register([$IRSSI{'name'} => '{whois stalker %|$1}']);
 
 # Settings
-Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_db_path", ".irssi/nicks.db" );
+Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_db_path", "nicks.db" );
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_max_recursion", 20 );
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_guest_nick_regex", "/^guest.*/i" );
-Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_debug_log_file", ".irssi/stalker.log" );
+Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_debug_log_file", "stalker.log" );
 
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_verbose", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_debug", 0 );
@@ -52,6 +53,9 @@ my $str;
 # Database
 
 my $db = Irssi::settings_get_str($IRSSI{name} . '_db_path');
+if ( File::Spec->file_name_is_absolute($db) ) {
+    $db = File::Spec->catfile( Irssi::get_irssi_dir(), $db );
+}
 
 stat_database( $db );
 
@@ -273,7 +277,12 @@ sub debugLog {
     return unless Irssi::settings_get_bool($IRSSI{name} . "_debug_log" );
     my $now = strftime( "[%D %H:%M:%S]", localtime );
 
-    open my $fh, ">>", Irssi::settings_get_str( $IRSSI{name} . "_debug_log_file" )
+    my $logpath = Irssi::settings_get_str( $IRSSI{name} . "_debug_log_file" );
+    if ( File::Spec->file_name_is_absolute($logpath) ) {
+        $logpath = File::Spec->catfile( Irssi::get_irssi_dir(), $logpath );
+    }
+
+    open my $fh, ">>", $logpath
         or die "Fatal error: Cannot open my logfile at " . $IRSSI{name} . "_debug_log_file for writing: $!";
     print $fh "[$lvl] $now $msg\n";
     close $fh;
