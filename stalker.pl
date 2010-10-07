@@ -53,7 +53,7 @@ my $str;
 # Database
 
 my $db = Irssi::settings_get_str($IRSSI{name} . '_db_path');
-if ( File::Spec->file_name_is_absolute($db) ) {
+if ( ! File::Spec->file_name_is_absolute($db) ) {
     $db = File::Spec->catfile( Irssi::get_irssi_dir(), $db );
 }
 
@@ -278,7 +278,7 @@ sub debugLog {
     my $now = strftime( "[%D %H:%M:%S]", localtime );
 
     my $logpath = Irssi::settings_get_str( $IRSSI{name} . "_debug_log_file" );
-    if ( File::Spec->file_name_is_absolute($logpath) ) {
+    if ( ! File::Spec->file_name_is_absolute($logpath) ) {
         $logpath = File::Spec->catfile( Irssi::get_irssi_dir(), $logpath );
     }
 
