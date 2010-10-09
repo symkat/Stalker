@@ -1,3 +1,7 @@
+2010-10-09
+    * Added channel sync event handling to replace who on join
+    * Removed hide_who option (no longer needed)
+    * Thanks to Wouter Coekaerts for the suggestion!
 2010-10-06
     * Added patch by Mantas Mikulėnas "Make the default paths relative 
       to Irssi home directory" to correct issue with paths when starting

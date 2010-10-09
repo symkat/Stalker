@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite3
 
-$VERSION = '0.31';
+$VERSION = '0.40';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -26,6 +26,7 @@ Irssi::signal_add( 'message join', \&nick_joined );
 Irssi::signal_add( 'nicklist changed', \&nick_changed_channel );
 Irssi::signal_add( 'event 352', \&who_list );
 Irssi::signal_add( 'channel joined', \&me_join );
+Irssi::signal_add( 'channel sync', \&channel_sync );
 
 Irssi::command_bind( 'host_lookup', \&host_request );
 Irssi::command_bind( 'nick_lookup', \&nick_request );
@@ -43,8 +44,6 @@ Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_debug", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_recursive_search", 1 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_search_this_network_only", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_ignore_guest_nicks", 1 );
-Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_who_on_join", 1 );
-Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_hide_who", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_debug_log", 0 );
 my $count;
 my %data;
@@ -95,16 +94,16 @@ sub nick_changed_channel {
     add_record( $_[1]->{nick}, (split( '@', $_[1]->{host} )), $_[0]->{server}->{address} );
 }
 
-
-sub who_list {
-    add_record( (split(" ", $_[1]))[5,2,3], $_[0]->{address} );
-    Irssi::signal_stop() if Irssi::settings_get_bool( $IRSSI{name} . "_hide_who" );
+sub channel_sync {
+    my ( $channel ) = @_;
+    
+    my $serv = $channel->{server}->{address};
+    
+    for my $nick ( $channel->nicks() ) {
+        add_record( $nick->{nick}, ( split( '@', $nick->{host} ) ), $serv );
+    } 
 }
 
-sub me_join {
-    $_[0]->{server}->send_raw( "WHO " . $_[0]->{name} ) 
-        if Irssi::settings_get_bool( $IRSSI{name} . "_who_on_join" );
-}
 
 # Automatic Database Creation And Checking
 sub stat_database {
