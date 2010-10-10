@@ -25,7 +25,6 @@ Irssi::signal_add_last( 'event 311', \&whois_request );
 Irssi::signal_add( 'message join', \&nick_joined );
 Irssi::signal_add( 'nicklist changed', \&nick_changed_channel );
 Irssi::signal_add( 'event 352', \&who_list );
-Irssi::signal_add( 'channel joined', \&me_join );
 Irssi::signal_add( 'channel sync', \&channel_sync );
 
 Irssi::command_bind( 'host_lookup', \&host_request );
