@@ -206,7 +206,7 @@ sub _r_search {
             next if exists $data{$host};
             $data{$host} = 'host';
             my @nicks = _get_nicks_from_host( $host, $serv );
-            verbosePrint( "Got nicks: " . join( ", ", @nicks ) . "from host $host" );
+            verbosePrint( "Got nicks: " . join( ", ", @nicks ) . " from host $host" );
             _r_search( $serv, 'nick', @nicks );
         }
     }
