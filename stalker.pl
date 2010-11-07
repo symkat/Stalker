@@ -98,6 +98,7 @@ sub channel_sync {
     my $serv = $channel->{server}->{address};
     
     for my $nick ( $channel->nicks() ) {
+        last if $nick->{host} eq ''; # Sometimes channel sync doesn't give us this...
         add_record( $nick->{nick}, ( split( '@', $nick->{host} ) ), $serv );
     } 
 }
