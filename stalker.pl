@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite3
 
-$VERSION = '0.40';
+$VERSION = '0.50';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -29,7 +29,11 @@ Irssi::signal_add( 'channel sync', \&channel_sync );
 Irssi::command_bind( 'host_lookup', \&host_request );
 Irssi::command_bind( 'nick_lookup', \&nick_request );
 
-Irssi::theme_register([$IRSSI{'name'} => '{whois stalker %|$1}']);
+Irssi::theme_register([
+    $IRSSI{'name'} => '{whois stalker %|$1}',
+    $IRSSI{'name'} . '_join' => '{channick_hilight $0} {chanhost_hilight $1} has joined '
+        . '{hilight $2} ({channel $3})', 
+]);
 
 # Settings
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_db_path", "nicks.db" );
@@ -43,6 +47,8 @@ Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_recursive_search", 1 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_search_this_network_only", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_ignore_guest_nicks", 1 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_debug_log", 0 );
+Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_stalk_on_join", 0 );
+
 my $count;
 my %data;
 my $str;
@@ -85,7 +91,19 @@ sub nick_request {
 
 #   Record Adding Functions
 sub nick_joined {
-    add_record($_[2], (split('@', $_[3]), $_[0]->{address}));
+    my ( $server, $channel, $nick, $address ) = @_;
+    my ( $user, $host ) = ( split ( '@', $address, 2 ) );
+
+    add_record( $nick, $user, $host, $server->{address});
+    
+    if ( Irssi::settings_get_bool($IRSSI{name} . "_stalk_on_join") ) {
+        my $window = $server->channel_find($channel);
+        my @used_nicknames = get_records( 'host', $host, $server->{address} );
+        
+        $window->printformat( MSGLEVEL_JOINS, 'stalker_join', 
+            $nick, $address, $channel, join( ", ", @used_nicknames )); 
+        Irssi::signal_stop(); 
+    }
 }
 
 sub nick_changed_channel {
@@ -291,3 +309,4 @@ sub windowPrint {
 }
 
 windowPrint( "Loaded $IRSSI{'name'}" );
+
