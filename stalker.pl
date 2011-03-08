@@ -39,7 +39,7 @@ Irssi::theme_register([
 # Settings
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_db_path", "nicks.db" );
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_max_recursion", 20 );
-Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_guest_nick_regex", "/^guest.*/i" );
+Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_guest_nick_regex", "^guest" );
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_debug_log_file", "stalker.log" );
 
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_verbose", 0 );
