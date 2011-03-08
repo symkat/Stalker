@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite
 
-$VERSION = '0.62';
+$VERSION = '0.72';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -16,7 +16,7 @@ $VERSION = '0.62';
     decsription => 'Records and correlates nick!user@host information',
     license     => "BSD",
     url         => "http://github.com/symkat/stalker",
-    changed     => "2011-08-10",
+    changed     => "2011-08-12",
     changes     => "See Change Log",
 );
 
@@ -40,6 +40,7 @@ Irssi::theme_register([
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_db_path", "nicks.db" );
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_max_recursion", 20 );
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_guest_nick_regex", "^guest" );
+Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_guest_host_regex", "^webchat" );
 Irssi::settings_add_str( 'Stalker',  $IRSSI{name} . "_debug_log_file", "stalker.log" );
 
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_verbose", 0 );
@@ -47,6 +48,7 @@ Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_debug", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_recursive_search", 1 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_search_this_network_only", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_ignore_guest_nicks", 1 );
+Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_ignore_guest_hosts", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_debug_log", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_stalk_on_join", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_normalize_nicks", 1 );
@@ -335,17 +337,14 @@ sub _get_hosts_from_nick {
 
     my $sth;
     if ( Irssi::settings_get_bool( $IRSSI{name} .  "_search_this_network_only" ) ){
-        $sth = $DBH->prepare( "select host from records where nick = ? and serv = ?" );
+        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick = ? AND serv = ?" );
         $sth->execute( $nick, $serv );
     } else {
-        $sth = $DBH->prepare( "select host from records where nick = ?" );
+        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE nick = ?" );
         $sth->execute( $nick );
     }
 
-    while ( my $row = $sth->fetchrow_hashref ) {
-        push @return, $row->{host};
-    }
-    return @return;
+    return _ignore_guests( 'host', $sth );
 }
 
 sub _get_nicks_from_host {
@@ -353,19 +352,30 @@ sub _get_nicks_from_host {
 
     my $sth;
     if ( Irssi::settings_get_bool( $IRSSI{name} .  "_search_this_network_only" ) ){
-        $sth = $DBH->prepare( "select nick from records where host = ? and serv = ?" );
+        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE host = ? AND serv = ?" );
         $sth->execute( $host, $serv );
     } else {
-        $sth = $DBH->prepare( "select nick from records where host = ?" );
+        $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE host = ?" );
         $sth->execute( $host );
     }
-    
+
+    return _ignore_guests( 'nick', $sth );
+}
+
+sub _ignore_guests {
+    my ( $field, $sth ) = @_;
+    my @return;
+
     while ( my $row = $sth->fetchrow_hashref ) {
         if ( Irssi::settings_get_bool($IRSSI{name} . "_ignore_guest_nicks") ) {
             my $regex = Irssi::settings_get_str( $IRSSI{name} . "_guest_nick_regex" );
-            next if $row->{nick} =~ m/$regex/i;
+            next if( $row->{nick} =~ m/$regex/i );
         }
-        push @return, $row->{nick};
+        if ( Irssi::settings_get_bool($IRSSI{name} . "_ignore_guest_hosts") ) {
+            my $regex = Irssi::settings_get_str( $IRSSI{name} . "_guest_host_regex" );
+            next if( $row->{host} =~ m/$regex/i );
+        }
+        push @return, $row->{$field};
     }
     return @return;
 }
