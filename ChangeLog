@@ -1,6 +1,12 @@
+2011-08-12 .73
+    * Sort nicknames show in case-insensitive alphabetical order by VinzNL.
+        - IsaacG
+
 2011-08-12 .72
     * Added _ignore_guest_hosts and _guest_host_regex. Allows you to ignore a
       host, such as "webchat", "mibbit" or "gmail.com" (for Bitlbee users).
+      Code by VinzNL.
+        - IsaacG
 
 2011-08-12 .71
     * Fixed the default stalker_guest_nick_regex setting; should be a pattern 

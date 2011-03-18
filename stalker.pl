@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite
 
-$VERSION = '0.72';
+$VERSION = '0.73';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -296,8 +296,11 @@ sub get_records {
     }
 
     if ( Irssi::settings_get_bool($IRSSI{name} . "_normalize_nicks" ) ) {
-        return normalize(@return);
+        @return = normalize(@return);
     }
+
+    # case-insensitive sort
+    @return = sort {uc($a) cmp uc($b)} @return;
 
     return @return;
 }
