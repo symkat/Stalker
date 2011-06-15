@@ -6,7 +6,7 @@ use POSIX qw/ strftime /;
 
 # Requires:
 #   DBI
-#   DBD::SQLite
+#   DBD::SQLite3
 
 $VERSION = '0.50';
 %IRSSI = (
