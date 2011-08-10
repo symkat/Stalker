@@ -117,7 +117,7 @@ sub channel_sync {
 
     my $pid = fork();
     if ( ! defined( $pid ) ) {
-        debugPrint("crit", "fork() failed. aborting channel sync.";
+        debugPrint("crit", "fork() failed. aborting channel sync." );
         return;
     }
     return if ($pid > 0); # Parent
