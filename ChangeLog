@@ -1,3 +1,8 @@
+2011-09-10 .60
+    * Added add_timestamp_column. This adds a "added" timestamp column to the
+	database which records when a record was added.
+	- IsaacG
+
 2011-01-16 .50
     * Added stalker_stalk_on_join option.  Turning this on will show previous
     nicknames when a user joins "foo foo@bar has joined #perl ( foo, bar, blee

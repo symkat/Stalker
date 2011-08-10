@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite
 
-$VERSION = '0.50';
+$VERSION = '0.60';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -16,7 +16,7 @@ $VERSION = '0.50';
     decsription => 'Records and correlates nick!user@host information',
     license     => "BSD",
     url         => "http://github.com/symkat/stalker",
-    changed     => "2010-10-06",
+    changed     => "2011-08-10",
     changes     => "See Change Log",
 );
 
@@ -172,15 +172,10 @@ sub add_timestamp_column {
 		"DROP TABLE records;",
 		"ALTER TABLE new_records RENAME TO records;"
 	);
-	my $i = 0;
-	my $sth = $DBH->prepare($queries[$i++]) or die;
-	$sth->execute() or die;
-	my $sth = $DBH->prepare($queries[$i++]) or die;
-	$sth->execute() or die;
-	my $sth = $DBH->prepare($queries[$i++]) or die;
-	$sth->execute() or die;
-	my $sth = $DBH->prepare($queries[$i++]) or die;
-	$sth->execute() or die;
+	for my $query (@queries) {
+		my $sth = $DBH->prepare($query) or die;
+		$sth->execute() or die;
+	}
 }
 
 sub create_database {
