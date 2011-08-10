@@ -148,13 +148,47 @@ sub stat_database {
     my $sane = $sth->fetchrow_array;
     
     create_database( $db_file, $DBH ) if $sane == undef;
+
+	# Magical testing for the new "added" column; this column was added later
+	# Need to test for its existance and "add" it if missing
+    $sth = $DBH->prepare( "SELECT * FROM records WHERE serv = ?;" );
+    $sth->execute( 'script-test-string' );
+    my @arr = $sth->fetchrow_array; # I can't convert to a row count without storing in an array first
+	if( scalar(@arr) == 4 ) { # 4 columns is the old format
+		add_timestamp_column($DBH);
+	}
+	elsif( scalar(@arr) != 5 ) { # 5 is the new. Anything else is ... wrong
+		die "Malformed DB. Column count is " . scalar(@arr);
+	}
+}
+
+# Create a new table with the extra column, move the data over. delete old table and alter name
+sub add_timestamp_column {
+	my ( $DBH ) = @_;
+	my @queries = ( "CREATE TABLE new_records (nick TEXT NOT NULL," .
+        "user TEXT NOT NULL, host TEXT NOT NULL, serv TEXT NOT NULL, " .
+		"added DATE NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+		"INSERT INTO new_records (nick,user,host,serv) SELECT nick,user,host,serv FROM records;",
+		"DROP TABLE records;",
+		"ALTER TABLE new_records RENAME TO records;"
+	);
+	my $i = 0;
+	my $sth = $DBH->prepare($queries[$i++]) or die;
+	$sth->execute() or die;
+	my $sth = $DBH->prepare($queries[$i++]) or die;
+	$sth->execute() or die;
+	my $sth = $DBH->prepare($queries[$i++]) or die;
+	$sth->execute() or die;
+	my $sth = $DBH->prepare($queries[$i++]) or die;
+	$sth->execute() or die;
 }
 
 sub create_database {
     my ( $db_file, $DBH ) = @_;
     
     my $query = "CREATE TABLE records (nick TEXT NOT NULL," .
-        "user TEXT NOT NULL, host TEXT NOT NULL, serv TEXT NOT NULL)";
+        "user TEXT NOT NULL, host TEXT NOT NULL, serv TEXT NOT NULL, " .
+		"added DATE NOT NULL DEFAULT CURRENT_TIMESTAMP)";
     
     $DBH->do( "DROP TABLE IF EXISTS records" );
     $DBH->do( $query );
