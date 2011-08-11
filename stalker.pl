@@ -141,13 +141,13 @@ sub stat_database {
         }
     );
 
-    create_database( $db_file, $DBH ) if $do;
+    create_database( $DBH ) if $do;
 
     my $sth = $DBH->prepare( "SELECT nick from records WHERE serv = ?" );
     $sth->execute( 'script-test-string' );
     my $sane = $sth->fetchrow_array;
     
-    create_database( $db_file, $DBH ) if $sane == undef;
+    create_database( $DBH ) if $sane == undef;
 
 	# Magical testing for the new "added" column; this column was added later
 	# Need to test for its existance and "add" it if missing
@@ -179,7 +179,7 @@ sub add_timestamp_column {
 }
 
 sub create_database {
-    my ( $db_file, $DBH ) = @_;
+    my ( $DBH ) = @_;
     
     my $query = "CREATE TABLE records (nick TEXT NOT NULL," .
         "user TEXT NOT NULL, host TEXT NOT NULL, serv TEXT NOT NULL, " .
