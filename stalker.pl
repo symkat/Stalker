@@ -158,7 +158,7 @@ sub stat_database {
 		add_timestamp_column($DBH);
 	}
 	elsif( scalar(@arr) != 5 ) { # 5 is the new. Anything else is ... wrong
-		die "Malformed DB. Column count is " . scalar(@arr);
+		die "The DB should have 4 or 5 columns. Found " . scalar(@arr);
 	}
 }
 
@@ -173,8 +173,8 @@ sub add_timestamp_column {
 		"ALTER TABLE new_records RENAME TO records;"
 	);
 	for my $query (@queries) {
-		my $sth = $DBH->prepare($query) or die;
-		$sth->execute() or die;
+		my $sth = $DBH->prepare($query) or die "Failed to prepare '$query'. " . $sth->err;
+		$sth->execute() or die "Failed to execute '$query'. " . $sth->err;
 	}
 }
 
