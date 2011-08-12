@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite
 
-$VERSION = '0.60';
+$VERSION = '0.62';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -49,6 +49,7 @@ Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_search_this_network_only",
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_ignore_guest_nicks", 1 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_debug_log", 0 );
 Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_stalk_on_join", 0 );
+Irssi::settings_add_bool( 'Stalker', $IRSSI{name} . "_normalize_nicks", 1 );
 
 my $count;
 my %data;
@@ -199,6 +200,17 @@ sub create_database {
 
 # Other Routines
 
+sub normalize {
+    my ( @nicks ) = @_;
+    my ( %nicks, %ret ) = map { $_, 1 } @nicks;
+
+    for my $nick ( @nicks ) {
+        (my $base = $nick ) =~ s/[\Q-_~^`\E]//g;
+        $ret{ exists $nicks{$base} ? $base : $nick }++;
+    }
+    return keys %ret;
+}
+
 sub add_record {
     my ( $nick, $user, $host, $serv ) = @_;
     return unless ($nick and $user and $host and $serv);
@@ -280,6 +292,11 @@ sub get_records {
         debugPrint( "info", "$type query for records on $query from server $serv returned: $k" );
         push @return, $k if $data{$k} eq 'nick';
     }
+
+    if ( Irssi::settings_get_bool($IRSSI{name} . "_normalize_nicks" ) ) {
+        return normalize(@return);
+    }
+
     return @return;
 }
 
