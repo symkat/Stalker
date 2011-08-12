@@ -1,3 +1,16 @@
+2011-09-12 .71
+    * Fixed the default stalker_guest_nick_regex setting; should be a pattern 
+	and not include the /'s. Patch by VinzNL.
+
+2011-09-11 .70
+    * Changed add_record to do asynchronous DB access. This adds a pidwait trap,
+	and functions record_added, async_add and db_add_record (which does what 
+	add_record used to do). This prevents the script from locking up irssi when
+	there are a lot of records to add, eg when joining a large channel or when
+	connecting to a network. The forking code was stolen from Timo 'cras' 
+	Sirainen (http://scripts.irssi.org/html/dns.pl). Been working for me for 6
+	months so I hope it's solid code.
+
 2011-09-10 .60
     * Added add_timestamp_column. This adds a "added" timestamp column to the
 	database which records when a record was added.
