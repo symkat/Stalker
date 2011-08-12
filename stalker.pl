@@ -25,6 +25,7 @@ Irssi::signal_add_last( 'event 311', \&whois_request );
 Irssi::signal_add( 'message join', \&nick_joined );
 Irssi::signal_add( 'nicklist changed', \&nick_changed_channel );
 Irssi::signal_add( 'channel sync', \&channel_sync );
+Irssi::signal_add( 'pidwait', \&record_added );
 
 Irssi::command_bind( 'host_lookup', \&host_request );
 Irssi::command_bind( 'nick_lookup', \&nick_request );
@@ -70,6 +71,11 @@ my $DBH = DBI->connect(
     }
 ) or die "Failed to connect to database $db: " . $DBI::errstr;
 
+# async data
+my @records_to_add; # Queue of records to add
+my $child_running;   # child pid that is running
+
+my $pipe_tag;
 
 # IRSSI Routines
 
@@ -197,6 +203,50 @@ sub add_record {
     my ( $nick, $user, $host, $serv ) = @_;
     return unless ($nick and $user and $host and $serv);
     
+    # Queue the record data and run child unless it's already forked
+    push @records_to_add, [$nick, $user, $host, $serv];
+    async_add() if (not $child_running);
+}
+
+# Signalled by pidwait -> child exited -> set child not running and fork() again if items are queued
+sub record_added
+{
+    $child_running = 0;
+    async_add() if (@records_to_add);
+}
+
+# Grab the queue and fork a child to process it
+# Signal parent when child is done so we know when it's safe to fork() again
+sub async_add
+{
+    return unless (@records_to_add);
+    # Copy the queue of records
+    my @record_list = @records_to_add;
+
+    my $pid = fork();
+    if (not defined $pid)
+    {
+        debugPrint( "crit", "Failed to fork()" );
+        return;
+    }
+
+    if ($pid > 0) # parent thread
+    {
+        $child_running = $pid; # The child is working
+        @records_to_add = (); # Reset the queue
+        Irssi::pidwait_add($pid); # Signal when child is done
+        return;
+    }
+
+    # In child, do the database tasks
+    db_add_record(@{$_}) for (@record_list);
+    POSIX::_exit(1);
+}
+
+sub db_add_record
+{
+    my ($nick, $user, $host, $serv) = @_;
+
     # Check if we already have this record.
     my $q = "SELECT nick FROM records WHERE nick = ? AND user = ? AND host = ? AND serv = ?";
     my $sth = $DBH->prepare( $q );
@@ -204,10 +254,10 @@ sub add_record {
     my $result = $sth->fetchrow_hashref;
 
     if ( $result->{nick} eq $nick ) {
-        debugPrint( "info", "Record for $nick skipped - already exists." );
+        #debugPrint( "info", "Record for $nick skipped - already exists." );
         return 1;
     }
-   
+
     debugPrint( "info", "Adding to DB: nick = $nick, user = $user, host = $host, serv = $serv" );
 
     # We don't have the record, add it.
