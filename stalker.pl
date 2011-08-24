@@ -136,6 +136,7 @@ sub stat_database {
     my ( $db_file ) = @_;
     my $do = 0;
 
+    debugPrint("info", "Stat database.");
     if ( ! -e $db_file  ) {
         open my $fh, '>', $db_file
             or die "Cannot create database file.  Abort.";
@@ -164,6 +165,7 @@ sub stat_database {
     $sth->execute( 'script-test-string' );
     my @arr = $sth->fetchrow_array; # I can't convert to a row count without storing in an array first
     if( scalar(@arr) == 4 ) { # 4 columns is the old format
+        debugPrint("info", "Add timestamp column to existing database.");
         add_timestamp_column($DBH);
     }
     elsif( scalar(@arr) != 5 ) { # 5 is the new. Anything else is ... wrong
@@ -202,6 +204,7 @@ sub create_database {
 
 # Other Routines
 
+# Strip certain chars from the nick if the nick exists without them 
 sub normalize {
     my ( @nicks ) = @_;
     my ( %nicks, %ret ) = map { $_, 1 } @nicks;
@@ -218,6 +221,7 @@ sub add_record {
     return unless ($nick and $user and $host and $serv);
     
     # Queue the record data and run child unless it's already forked
+    debugPrint("info", "Queue record to add to DB and, if needed, start child process.");
     push @records_to_add, [$nick, $user, $host, $serv];
     async_add() if (not $child_running);
 }
@@ -226,6 +230,7 @@ sub add_record {
 sub record_added
 {
     $child_running = 0;
+    debugPrint("info", "Child process complete. Make new child if needed.");
     async_add() if (@records_to_add);
 }
 
@@ -254,6 +259,7 @@ sub async_add
 
     # In child, do the database tasks
     db_add_record(@{$_}) for (@record_list);
+    # When done, exit which signals the parent
     POSIX::_exit(1);
 }
 
