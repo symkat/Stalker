@@ -78,8 +78,6 @@ my $DBH = DBI->connect(
 my @records_to_add; # Queue of records to add
 my $child_running;   # child pid that is running
 
-my $pipe_tag;
-
 # IRSSI Routines
 
 sub whois_request {
@@ -365,7 +363,7 @@ sub _get_nicks_from_host {
         $sth->execute( $host, $serv );
     } else {
         $sth = $DBH->prepare( "SELECT nick, host FROM records WHERE host = ?" );
-        $sth->execute( $host );
+        $sth->execute( $host ) or die sprintf("Execute failed on line %d, PID %d, child_running = %d, error: %s\n", __LINE__, $$, $child_running, $sth->errstr);
     }
 
     return _ignore_guests( 'nick', $sth );
