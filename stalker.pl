@@ -76,7 +76,7 @@ my $DBH = DBI->connect(
 
 # async data
 my @records_to_add; # Queue of records to add
-my $child_running;   # child pid that is running
+my $child_running = 0;   # child pid that is running
 
 # IRSSI Routines
 
@@ -247,13 +247,26 @@ sub async_add
         return;
     }
 
+    # The child is working.
+    # Parent uses this to prevent fork()ing until child finishes. 
+    # Child uses this to prevent doing things that only the parent should do.
+    $child_running = $pid;
+
     if ($pid > 0) # parent thread
     {
-        $child_running = $pid; # The child is working
         @records_to_add = (); # Reset the queue
         Irssi::pidwait_add($pid); # Signal when child is done
         return;
     }
+
+    # First thing is to unregister signals. That might prevent the child from catching whatever is causing Issue #3
+    Irssi::signal_remove( 'event 311', \&whois_request );
+    Irssi::signal_remove( 'message join', \&nick_joined );
+    Irssi::signal_remove( 'nicklist changed', \&nick_changed_channel );
+    Irssi::signal_remove( 'channel sync', \&channel_sync );
+    Irssi::signal_remove( 'pidwait', \&record_added );
+    Irssi::command_unbind( 'host_lookup', \&host_request );
+    Irssi::command_unbind( 'nick_lookup', \&nick_request );
 
     # In child, do the database tasks
     db_add_record(@{$_}) for (@record_list);
@@ -291,7 +304,7 @@ sub db_add_record
 
 sub get_records {
     my ( $type, $query, $serv, @return ) = @_;
-    
+
     $count = 0; %data = (  );
     my %data = _r_search( $serv, $type, $query );
     for my $k ( keys %data ) {
