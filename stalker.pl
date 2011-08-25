@@ -317,9 +317,7 @@ sub get_records {
     }
 
     # case-insensitive sort
-    @return = sort {uc($a) cmp uc($b)} @return;
-
-    return @return;
+    return sort {uc($a) cmp uc($b)} @return;
 }
 
 sub _r_search {
