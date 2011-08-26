@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite
 
-$VERSION = '0.73';
+$VERSION = '0.74';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -16,7 +16,7 @@ $VERSION = '0.73';
     decsription => 'Records and correlates nick!user@host information',
     license     => "BSD",
     url         => "http://github.com/symkat/stalker",
-    changed     => "2011-08-12",
+    changed     => "2011-09-15",
     changes     => "See Change Log",
 );
 
@@ -67,6 +67,16 @@ if ( ! File::Spec->file_name_is_absolute($db) ) {
 stat_database( $db );
 
 my $DBH = DBI->connect(
+    'dbi:SQLite:dbname='.$db, "", "",
+    {
+        RaiseError => 1,
+        AutoCommit => 1,
+    }
+) or die "Failed to connect to database $db: " . $DBI::errstr;
+
+# DBI::SQLite and fork() don't mix. Do it anyhow but keep the parent and child DBH separate?
+# Ideally the child should open its own connection.
+my $DBH_child = DBI->connect(
     'dbi:SQLite:dbname='.$db, "", "",
     {
         RaiseError => 1,
@@ -280,7 +290,7 @@ sub db_add_record
 
     # Check if we already have this record.
     my $q = "SELECT nick FROM records WHERE nick = ? AND user = ? AND host = ? AND serv = ?";
-    my $sth = $DBH->prepare( $q );
+    my $sth = $DBH_child->prepare( $q );
     $sth->execute( $nick, $user, $host, $serv );
     my $result = $sth->fetchrow_hashref;
 
@@ -292,7 +302,7 @@ sub db_add_record
     debugPrint( "info", "Adding to DB: nick = $nick, user = $user, host = $host, serv = $serv" );
 
     # We don't have the record, add it.
-    $sth = $DBH->prepare
+    $sth = $DBH_child->prepare
         ("INSERT INTO records (nick,user,host,serv) VALUES( ?, ?, ?, ? )" );
     eval { $sth->execute( $nick, $user, $host, $serv ) };
     if ($@) {
