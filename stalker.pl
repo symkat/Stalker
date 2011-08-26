@@ -74,12 +74,6 @@ my $DBH = DBI->connect(
     }
 ) or die "Failed to connect to database $db: " . $DBI::errstr;
 
-# Magic bullt that fixes read/write conflicts
-# Requires sqlite 2.7.0 or newer
-# Has no affect on older versions
-# See http://www.sqlite.org/draft/wal.html
-$DBH->do( "PRAGMA journal_mode=WAL;" );
-
 # async data
 my @records_to_add; # Queue of records to add
 my $child_running = 0;   # child pid that is running
