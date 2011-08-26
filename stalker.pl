@@ -74,6 +74,16 @@ my $DBH = DBI->connect(
     }
 ) or die "Failed to connect to database $db: " . $DBI::errstr;
 
+# DBI::SQLite and fork() don't mix. Do it anyhow but keep the parent and child DBH separate?
+# Ideally the child should open its own connection.
+my $DBH_child = DBI->connect(
+    'dbi:SQLite:dbname='.$db, "", "",
+    {
+        RaiseError => 1,
+        AutoCommit => 1,
+    }
+) or die "Failed to connect to database $db: " . $DBI::errstr;
+
 # async data
 my @records_to_add; # Queue of records to add
 my $child_running = 0;   # child pid that is running
@@ -280,7 +290,7 @@ sub db_add_record
 
     # Check if we already have this record.
     my $q = "SELECT nick FROM records WHERE nick = ? AND user = ? AND host = ? AND serv = ?";
-    my $sth = $DBH->prepare( $q );
+    my $sth = $DBH_child->prepare( $q );
     $sth->execute( $nick, $user, $host, $serv );
     my $result = $sth->fetchrow_hashref;
 
@@ -292,7 +302,7 @@ sub db_add_record
     debugPrint( "info", "Adding to DB: nick = $nick, user = $user, host = $host, serv = $serv" );
 
     # We don't have the record, add it.
-    $sth = $DBH->prepare
+    $sth = $DBH_child->prepare
         ("INSERT INTO records (nick,user,host,serv) VALUES( ?, ?, ?, ? )" );
     eval { $sth->execute( $nick, $user, $host, $serv ) };
     if ($@) {
