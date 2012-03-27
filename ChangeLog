@@ -1,3 +1,7 @@
+2012-03-27 .75
+	* Add database indices to speed up read accesses.
+	   - IsaacG
+
 2011-09-15 .74
     * Merged in the testing branch to get two DB handles to avoid the parent
       and child process from conflicting by using the same handle.

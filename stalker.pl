@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite
 
-$VERSION = '0.74';
+$VERSION = '0.75';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -16,7 +16,7 @@ $VERSION = '0.74';
     decsription => 'Records and correlates nick!user@host information',
     license     => "BSD",
     url         => "http://github.com/symkat/stalker",
-    changed     => "2011-09-15",
+    changed     => "2012-03-27",
     changes     => "See Change Log",
 );
 
@@ -179,17 +179,45 @@ sub stat_database {
     elsif( scalar(@arr) != 5 ) { # 5 is the new. Anything else is ... wrong
         die "The DB should have 4 or 5 columns. Found " . scalar(@arr);
     }
+
+    index_db( $DBH );
 }
+
+# Add indices to the DB. If they already exist, no harm done. 
+# Is there an easy way to test if they exist already?
+sub index_db {
+    my ( $DBH ) = @_;
+
+    my @queries = ( 
+        "CREATE INDEX index1 ON records (nick)",
+        "CREATE INDEX index2 ON records (host)",
+    );
+    $DBH->{RaiseError} = 0;
+    $DBH->{PrintError} = 0;
+    for my $query (@queries) {
+        $DBH->do( $query );
+    }
+    $DBH->{RaiseError} = 1;
+    $DBH->{PrintError} = 1;
+}
+
 
 # Create a new table with the extra column, move the data over. delete old table and alter name
 sub add_timestamp_column {
     my ( $DBH ) = @_;
-    my @queries = ( "CREATE TABLE new_records (nick TEXT NOT NULL," .
-        "user TEXT NOT NULL, host TEXT NOT NULL, serv TEXT NOT NULL, " .
-        "added DATE NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-        "INSERT INTO new_records (nick,user,host,serv) SELECT nick,user,host,serv FROM records;",
-        "DROP TABLE records;",
-        "ALTER TABLE new_records RENAME TO records;"
+
+    Irssi::print("Adding a timestamp column to the nicks db. Please wait...");
+
+    # Save the old records
+    $DBH->do( "ALTER TABLE records RENAME TO old_records" );
+
+    # Create the new table
+    create_database( $DBH );
+
+    # Copy the old records over and drop them
+    my @queries = (
+        "INSERT INTO records (nick,user,host,serv) SELECT nick,user,host,serv FROM old_records",
+        "DROP TABLE old_records",
     );
     for my $query (@queries) {
         my $sth = $DBH->prepare($query) or die "Failed to prepare '$query'. " . $sth->err;
@@ -200,14 +228,22 @@ sub add_timestamp_column {
 sub create_database {
     my ( $DBH ) = @_;
     
-    my $query = "CREATE TABLE records (nick TEXT NOT NULL," .
-        "user TEXT NOT NULL, host TEXT NOT NULL, serv TEXT NOT NULL, " .
-        "added DATE NOT NULL DEFAULT CURRENT_TIMESTAMP)";
+    my @queries = ( 
+        "DROP TABLE IF EXISTS records",
+        "CREATE TABLE records (nick TEXT NOT NULL," .
+            "user TEXT NOT NULL, host TEXT NOT NULL, serv TEXT NOT NULL, " .
+            "added DATE NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+        "INSERT INTO records (nick, user, host, serv) VALUES( 1, 1, 1, 'script-test-string' )"
+    );
     
-    $DBH->do( "DROP TABLE IF EXISTS records" );
-    $DBH->do( $query );
-    my $sth = $DBH->prepare( "INSERT INTO records (nick, user, host, serv) VALUES( ?, ?, ?, ? )" );
-    $sth->execute( 1, 1, 1, 'script-test-string' );
+    # Drop table is exists
+    # Create the table and indices
+    # Insert test record
+    for my $query (@queries) {
+        my $sth = $DBH->prepare($query) or die "Failed to prepare '$query'. " . $sth->err;
+        $sth->execute() or die "Failed to execute '$query'. " . $sth->err;
+    }
+    index_db( $DBH );
 }
 
 # Other Routines
