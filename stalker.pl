@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite
 
-$VERSION = '0.75';
+$VERSION = '0.76';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -29,6 +29,7 @@ Irssi::signal_add( 'pidwait', \&record_added );
 
 Irssi::command_bind( 'host_lookup', \&host_request );
 Irssi::command_bind( 'nick_lookup', \&nick_request );
+Irssi::command_bind( 'nick_lookup_h', \&nick_request_hosts );
 
 Irssi::theme_register([
     $IRSSI{'name'} => '{whois stalker %|$1}',
@@ -95,15 +96,19 @@ sub whois_request {
     my ( $me, $n, $u, $h ) = split(" ", $data );
    
     $server->printformat($n,MSGLEVEL_CRAP,$IRSSI{'name'},$n, 
-        join( ", ", (get_records('host', $h, $server->{address}))) . "." );
+        join( ", ", (get_nick_records('host', $h, $server->{address}))) . "." );
+}
+
+sub nick_request_hosts {
+    windowPrint( join( ", ", (get_host_records('nick', $_[0], $_[1]->{address}))) . ".");
 }
 
 sub host_request {
-    windowPrint( join( ", ", (get_records('host', $_[0], $_[1]->{address}))) . ".");
+    windowPrint( join( ", ", (get_nick_records('host', $_[0], $_[1]->{address}))) . ".");
 }
 
 sub nick_request {
-    windowPrint( join( ", ", (get_records('nick', $_[0], $_[1]->{address}))) . ".");
+    windowPrint( join( ", ", (get_nick_records('nick', $_[0], $_[1]->{address}))) . ".");
 }
 
 #   Record Adding Functions
@@ -115,7 +120,7 @@ sub nick_joined {
     
     if ( Irssi::settings_get_bool($IRSSI{name} . "_stalk_on_join") ) {
         my $window = $server->channel_find($channel);
-        my @used_nicknames = get_records( 'host', $host, $server->{address} );
+        my @used_nicknames = get_nick_records( 'host', $host, $server->{address} );
         
         $window->printformat( MSGLEVEL_JOINS, 'stalker_join', 
             $nick, $address, $channel, join( ", ", @used_nicknames )); 
@@ -313,6 +318,7 @@ sub async_add
     Irssi::signal_remove( 'pidwait', \&record_added );
     Irssi::command_unbind( 'host_lookup', \&host_request );
     Irssi::command_unbind( 'nick_lookup', \&nick_request );
+    Irssi::command_unbind( 'nick_lookup_h', \&nick_request_h );
 
     # In child, do the database tasks
     db_add_record(@{$_}) for (@record_list);
@@ -348,7 +354,21 @@ sub db_add_record
     debugPrint( "info", "Added record for $nick!$user\@$host to $serv" );
 }
 
-sub get_records {
+sub get_host_records {
+    my ( $type, $query, $serv, @return ) = @_;
+
+    $count = 0; %data = (  );
+    my %data = _r_search( $serv, $type, $query );
+    for my $k ( keys %data ) {
+        debugPrint( "info", "$type query for records on $query from server $serv returned: $k" );
+        push @return, $k if $data{$k} eq 'host';
+    }
+
+    # case-insensitive sort
+    return sort {uc($a) cmp uc($b)} @return;
+}
+
+sub get_nick_records {
     my ( $type, $query, $serv, @return ) = @_;
 
     $count = 0; %data = (  );

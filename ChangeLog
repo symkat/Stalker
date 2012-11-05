@@ -1,6 +1,11 @@
+2012-11-05 .76
+    * New nick_lookup_h command that takes a nick and shows associated
+      hosts.
+        - IsaacG
+
 2012-03-27 .75
-	* Add database indices to speed up read accesses.
-	   - IsaacG
+    * Add database indices to speed up read accesses.
+        - IsaacG
 
 2011-09-15 .74
     * Merged in the testing branch to get two DB handles to avoid the parent
