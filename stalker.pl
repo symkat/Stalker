@@ -16,7 +16,7 @@ $VERSION = '0.76';
     decsription => 'Records and correlates nick!user@host information',
     license     => "BSD",
     url         => "http://github.com/symkat/stalker",
-    changed     => "2012-03-27",
+    changed     => "2012-11-05",
     changes     => "See Change Log",
 );
 
