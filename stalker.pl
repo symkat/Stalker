@@ -100,15 +100,21 @@ sub whois_request {
 }
 
 sub nick_request_hosts {
-    windowPrint( join( ", ", (get_host_records('nick', $_[0], $_[1]->{address}))) . ".");
+	my ( $query, $server ) = ( $_[0], $_[1]->{address} )
+	$query =~ s/ $//;
+    windowPrint( join( ", ", (get_host_records('nick', $query, $server))) . ".");
 }
 
 sub host_request {
-    windowPrint( join( ", ", (get_nick_records('host', $_[0], $_[1]->{address}))) . ".");
+	my ( $query, $server ) = ( $_[0], $_[1]->{address} )
+	$query =~ s/ $//;
+    windowPrint( join( ", ", (get_nick_records('host', $query, $server))) . ".");
 }
 
 sub nick_request {
-    windowPrint( join( ", ", (get_nick_records('nick', $_[0], $_[1]->{address}))) . ".");
+	my ( $query, $server ) = ( $_[0], $_[1]->{address} )
+	$query =~ s/ $//;
+    windowPrint( join( ", ", (get_nick_records('nick', $query, $server))) . ".");
 }
 
 #   Record Adding Functions
