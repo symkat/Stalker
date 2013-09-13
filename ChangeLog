@@ -1,3 +1,7 @@
+2013-09-13 .77
+    * For nick_lookup_h, nick_lookup and host_lookup, strip any trailing space.
+        - IsaacG
+
 2012-11-05 .76
     * New nick_lookup_h command that takes a nick and shows associated
       hosts.

@@ -8,7 +8,7 @@ use POSIX qw/ strftime /;
 #   DBI
 #   DBD::SQLite
 
-$VERSION = '0.76';
+$VERSION = '0.77';
 %IRSSI = (
     authors     => 'SymKat',
     contact     => 'symkat@symkat.com',
@@ -16,7 +16,7 @@ $VERSION = '0.76';
     description => 'Records and correlates nick!user@host information',
     license     => "BSD",
     url         => "http://github.com/symkat/stalker",
-    changed     => "2012-11-05",
+    changed     => "2013-09-12",
     changes     => "See Change Log",
 );
 
@@ -100,19 +100,19 @@ sub whois_request {
 }
 
 sub nick_request_hosts {
-	my ( $query, $server ) = ( $_[0], $_[1]->{address} )
+	my ( $query, $server ) = ( $_[0], $_[1]->{address} );
 	$query =~ s/ $//;
     windowPrint( join( ", ", (get_host_records('nick', $query, $server))) . ".");
 }
 
 sub host_request {
-	my ( $query, $server ) = ( $_[0], $_[1]->{address} )
+	my ( $query, $server ) = ( $_[0], $_[1]->{address} );
 	$query =~ s/ $//;
     windowPrint( join( ", ", (get_nick_records('host', $query, $server))) . ".");
 }
 
 sub nick_request {
-	my ( $query, $server ) = ( $_[0], $_[1]->{address} )
+	my ( $query, $server ) = ( $_[0], $_[1]->{address} );
 	$query =~ s/ $//;
     windowPrint( join( ", ", (get_nick_records('nick', $query, $server))) . ".");
 }
