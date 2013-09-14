@@ -101,19 +101,19 @@ sub whois_request {
 
 sub nick_request_hosts {
 	my ( $query, $server ) = ( $_[0], $_[1]->{address} );
-	$query =~ s/ $//;
+	$query =~ s/\s//g;
     windowPrint( join( ", ", (get_host_records('nick', $query, $server))) . ".");
 }
 
 sub host_request {
 	my ( $query, $server ) = ( $_[0], $_[1]->{address} );
-	$query =~ s/ $//;
+	$query =~ s/\s//g;
     windowPrint( join( ", ", (get_nick_records('host', $query, $server))) . ".");
 }
 
 sub nick_request {
 	my ( $query, $server ) = ( $_[0], $_[1]->{address} );
-	$query =~ s/ $//;
+	$query =~ s/\s//g;
     windowPrint( join( ", ", (get_nick_records('nick', $query, $server))) . ".");
 }
 
